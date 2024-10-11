@@ -69,7 +69,7 @@ galachain init test-chaincode
 
 **Step 3: Start the network for test chaincode**
 ```bash
-()cd test-chaincode && npm run network:up)
+(cd test-chaincode && npm run network:up)
 ```
 
 **Step 4: Run the e2e tests for the chaincode to populate the network with some data**
