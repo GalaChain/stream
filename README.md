@@ -57,27 +57,27 @@ See also the usage sample at `./src/sample.ts`.
 
 This section describes how to create a GalaChain local network, fill it with some data and then stream blocks from it.
 
-**Step 1: Install the GalaChain CLI**
+**Step 1**: Install the GalaChain CLI
 ```bash
 npm install -g @gala-chain/cli
 ```
 
-**Step 2: Create a sample chaincode in the current directory**
+**Step 2**: Create a sample chaincode in the current directory
 ```bash
 galachain init test-chaincode
 ```
 
-**Step 3: Start the network for test chaincode**
+**Step 3**: Start the network for test chaincode
 ```bash
 (cd test-chaincode && npm run network:up)
 ```
 
-**Step 4: Run the e2e tests for the chaincode to populate the network with some data**
+**Step 4**: Run the e2e tests for the chaincode to populate the network with some data
 ```bash
 npm run test:e2e --prefix test-chaincode
 ```
 
-**Step 5: Stream blocks from the network**
+**Step 5**: Stream blocks from the network
 ```bash
 npx ts-node src/sample.ts
 ```
