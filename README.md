@@ -1,6 +1,6 @@
-# GalaChain Stream
+# GalaChain Block Stream
 
-A library which streams blocks from GalaChain or Hyperledger Fabric network.
+A Node.js library to stream blocks from GalaChain or Hyperledger Fabric network as RxJS Observables.
 
 Sample usage:
 
@@ -10,12 +10,22 @@ import stream from "@gala-chain/stream";
 stream
   .connect(config)
   .channel("product-channel")
-  .fromBlock(0)
+  .fromBlock(9)
+  .subscribe({
+    next: (block) => {
+      console.log("Block:", block.blockNumber);
+    },
+    error: (err) => {
+      console.error("Error:", err);
+    },
+    complete: () => {
+      console.log("Stream completed");
+    }
+  });
 ```
 
-This call returns RxJS Observable with Hyperledger Fabric blocks.
-
-Sample config object (filled with defaults):
+The `config` object should contain all the configuration needed to connect to the network.
+It can also be skipped to get default configuration, which is:
 
 ```typescript
 const config = {
@@ -35,17 +45,44 @@ const config = {
   },
   stream: {
     chainInfoPollingIntervalMs: 2000,
-    sleepIntervalMs: 500,
+    sleepIntervalMs: 1000,
     batchSize: 10
   }
 };
 ```
 
-The above config file is compatible with default network that comes from running local GalaChain network.
-You can get it running by calling:
+See also the usage sample at `./src/sample.ts`.
 
+## The end-to-end sample
+
+This section describes how to create a GalaChain local network, fill it with some data and then stream blocks from it.
+
+**Step 1: Install the GalaChain CLI**
 ```bash
-npm i -g @gala-chain/cli
+npm install -g @gala-chain/cli
+```
+
+### Step 2: Create a sample chaincode in the current directory**
+```bash
 galachain init test-chaincode
-npm run network:up --prefix ./test-chaincode
+```
+
+### Step 3: Start the network for test chaincode**
+```bash
+()cd test-chaincode && npm run network:up)
+```
+
+### Step 4: Run the e2e tests for the chaincode to populate the network with some data**
+```bash
+npm run test:e2e --prefix test-chaincode
+```
+
+### Step 5: Stream blocks from the network**
+```bash
+npx ts-node src/sample.ts
+```
+
+Once you're done, you can stop the network by running:
+```bash
+(cd test-chaincode && npm run network:prune)
 ```

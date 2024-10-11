@@ -1,7 +1,7 @@
 {
   "name": "@gala-chain/stream",
   "version": "0.0.1",
-  "description": "Streams blocks from GalaChain or Hyperledger Fabric network",
+  "description": "Streams blocks from GalaChain or Hyperledger Fabric network as RxJS Observables",
   "author": "",
   "private": false,
   "license": "Apache-2.0",
