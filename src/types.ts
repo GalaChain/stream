@@ -43,16 +43,16 @@ export enum TransactionValidationCode {
   INVALID_OTHER_REASON = 255,
 
   // additional, our own value to indicate we didn't fetch it
-  UNKNOWN = 999,
+  UNKNOWN = 999
 }
 
 export interface Transaction<ChainObject = unknown, ChaincodeResponse = unknown> {
   type: "ENDORSER_TRANSACTION";
-  validationCode: TransactionValidationCode
+  validationCode: TransactionValidationCode;
   creator: {
-    mspId: string,
-    name: string
-  }
+    mspId: string;
+    name: string;
+  };
   chaincode: {
     name: string;
     version: string;
@@ -85,4 +85,3 @@ export interface Write<ChainObject = unknown> {
   key: string;
   value: ChainObject;
 }
-

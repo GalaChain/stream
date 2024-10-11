@@ -1,5 +1,6 @@
-import { ChainStream } from "./ChainStream";
 import { Observable } from "rxjs";
+
+import { ChainStream } from "./ChainStream";
 import { Block } from "./types";
 
 export interface StreamConfig {

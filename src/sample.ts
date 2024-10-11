@@ -1,5 +1,4 @@
-import stream from "./stream";
-
+import stream from "./index";
 
 const config = {
   ca: {
@@ -13,12 +12,13 @@ const config = {
   },
   peer: {
     url: "grpcs://localhost:7041",
-    tlsCACertPath: "./test-chaincode/test-network/fablo-target/fabric-config/crypto-config/peerOrganizations/curator.local/msp/tlscacerts/tlsca.curator.local-cert.pem",
+    tlsCACertPath:
+      "./test-chaincode/test-network/fablo-target/fabric-config/crypto-config/peerOrganizations/curator.local/msp/tlscacerts/tlsca.curator.local-cert.pem",
     grpcHostnameOverride: "peer0.curator.local"
   },
   stream: {
     chainInfoPollingIntervalMs: 2000,
-    sleepIntervalMs: 500,
+    sleepIntervalMs: 1000,
     batchSize: 10
   }
 };
@@ -26,10 +26,10 @@ const config = {
 stream
   .connect(config)
   .channel("product-channel")
-  .fromBlock(0)
+  .fromBlock(9)
   .subscribe({
     next: (block) => {
-      console.log("Block:", block);
+      console.log("Block:", block.blockNumber);
     },
     error: (err) => {
       console.error("Error:", err);

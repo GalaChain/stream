@@ -1,13 +1,14 @@
-import * as crypto from "crypto";
 import * as grpc from "@grpc/grpc-js";
-import { IIdentity } from "./CAService";
-import { connect, Gateway, GrpcClient, Identity, Network, signers } from "@hyperledger/fabric-gateway";
-import fs from "fs";
-import { Block, ChainInfo, TransactionValidationCode } from "./types";
-import { common as fabricProtos } from "fabric-protos";
+import { Gateway, GrpcClient, Identity, Network, connect, signers } from "@hyperledger/fabric-gateway";
+import * as crypto from "crypto";
 // @ts-expect-error: unhandled type in fabric-common
 import { BlockDecoder } from "fabric-common";
+import { common as fabricProtos } from "fabric-protos";
+import fs from "fs";
+
+import { IIdentity } from "./CAService";
 import { parseBlock } from "./parseBlock";
+import { Block, ChainInfo, TransactionValidationCode } from "./types";
 
 export interface PeerConfig {
   url: string;
@@ -23,8 +24,7 @@ export class ChainService {
   constructor(
     private readonly peer: PeerConfig,
     public readonly channelName: string
-  ) {
-  }
+  ) {}
 
   public connect(identity: IIdentity): void {
     if (this.client) {
@@ -107,7 +107,6 @@ export class ChainService {
     const querySystemCC = this.network.getContract("qscc");
     const blockBuffer = await querySystemCC.evaluateTransaction("GetChainInfo", this.channelName);
 
-
     const info = fabricProtos.BlockchainInfo.decode(blockBuffer);
 
     return {
@@ -121,6 +120,8 @@ export class ChainService {
       throw new Error(`Network ${this.channelName} not connected`);
     }
 
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
     const querySystemCC = this.network.getContract("qscc");
     const blockBuffer = await querySystemCC.evaluateTransaction(
       "GetBlockByNumber",
@@ -131,8 +132,11 @@ export class ChainService {
     const convertedBlockBuffer = blockBuffer instanceof Uint8Array ? Buffer.from(blockBuffer) : blockBuffer;
     const block = parseBlock(BlockDecoder.decode(convertedBlockBuffer));
 
-    const codes = await this.queryTransactionCodes(this.network, block.transactions.map(tx => tx.id));
-    block.transactions.forEach(t => {
+    const codes = await this.queryTransactionCodes(
+      this.network,
+      block.transactions.map((tx) => tx.id)
+    );
+    block.transactions.forEach((t) => {
       t.validationCode = codes[t.id] ?? TransactionValidationCode.UNKNOWN;
     });
 
@@ -140,13 +144,15 @@ export class ChainService {
   }
 
   private async queryTransactionCodes(network: Network, txIds: string[]) {
-    const kvs: [ string, number ][] = await Promise.all(txIds.map(async txId => [ txId, await this.queryTransactionCode(network, txId) ] as [ string, number ]));
-    return kvs.reduce((all, [ k, v ]) => ({ ...all, [k]: v }), {} as Record<string, TransactionValidationCode>);
+    const kvs: [string, number][] = await Promise.all(
+      txIds.map(async (txId) => [txId, await this.queryTransactionCode(network, txId)] as [string, number])
+    );
+    return kvs.reduce((all, [k, v]) => ({ ...all, [k]: v }), {} as Record<string, TransactionValidationCode>);
   }
 
   // `GetTransactionByID` returns transaction validation code, and `GetBlockByNumber` doesn't
   // see: https://github.com/hyperledger/fabric/blob/main/core/ledger/kvledger/kv_ledger.go
-  private async queryTransactionCode(network:Network, txId: string): Promise<number> {
+  private async queryTransactionCode(network: Network, txId: string): Promise<number> {
     const querySystemCC = network.getContract("qscc");
     const txBuffer = await querySystemCC.evaluateTransaction("GetTransactionByID", this.channelName, txId);
     const convertedTxBuffer = txBuffer instanceof Uint8Array ? Buffer.from(txBuffer) : txBuffer;

@@ -1,7 +1,7 @@
 import { CAConfig, CAService, UserConfig } from "./CAService";
 import { ChainService, PeerConfig } from "./ChainService";
-import { ConnectedStream, StreamConfig } from "./ConnectedStream";
 import { ChainStream } from "./ChainStream";
+import { ConnectedStream, StreamConfig } from "./ConnectedStream";
 
 const defaultCaConfig = {
   orgMsp: "CuratorOrg",
@@ -16,7 +16,8 @@ const defaultUserConfig = {
 
 const defaultPeerConfig = {
   url: "grpcs://localhost:7041",
-  tlsCACertPath: "../galachain-operation-api/test-chaincode/test-network/fablo-target/fabric-config/crypto-config/peerOrganizations/curator.local/msp/tlscacerts/tlsca.curator.local-cert.pem",
+  tlsCACertPath:
+    "./test-chaincode/test-network/fablo-target/fabric-config/crypto-config/peerOrganizations/curator.local/msp/tlscacerts/tlsca.curator.local-cert.pem",
   grpcHostnameOverride: "peer0.curator.local"
 };
 
@@ -24,13 +25,13 @@ const defaultStreamConfig = {
   chainInfoPollingIntervalMs: 2000,
   sleepIntervalMs: 500,
   batchSize: 10
-}
+};
 
 export interface ConnectionParams {
-  ca?: Partial<CAConfig>,
-  user?: Partial<UserConfig>,
-  peer?: Partial<PeerConfig>,
-  stream?: Partial<StreamConfig>
+  ca?: Partial<CAConfig>;
+  user?: Partial<UserConfig>;
+  peer?: Partial<PeerConfig>;
+  stream?: Partial<StreamConfig>;
 }
 
 export class StreamBuilder {
@@ -57,7 +58,8 @@ export class StreamBuilder {
       grpcHostnameOverride: params.peer?.grpcHostnameOverride ?? defaultPeerConfig.grpcHostnameOverride
     };
     this.streamConfig = {
-      chainInfoPollingIntervalMs: params.stream?.chainInfoPollingIntervalMs ?? defaultStreamConfig.chainInfoPollingIntervalMs,
+      chainInfoPollingIntervalMs:
+        params.stream?.chainInfoPollingIntervalMs ?? defaultStreamConfig.chainInfoPollingIntervalMs,
       sleepIntervalMs: params.stream?.sleepIntervalMs ?? defaultStreamConfig.sleepIntervalMs,
       batchSize: params.stream?.batchSize ?? defaultStreamConfig.batchSize
     };
@@ -69,5 +71,4 @@ export class StreamBuilder {
     const chainStream = new ChainStream(caService, chainService);
     return new ConnectedStream(chainStream, this.streamConfig);
   }
-
 }

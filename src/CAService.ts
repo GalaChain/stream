@@ -1,5 +1,5 @@
-import { Identity as BaseIdentity, Wallet, Wallets } from "fabric-network";
 import FabricCAServices from "fabric-ca-client";
+import { Identity as BaseIdentity, Wallet, Wallets } from "fabric-network";
 import fs from "fs";
 
 export interface UserConfig {
@@ -31,7 +31,9 @@ export class CAService {
     private readonly caConfig: CAConfig,
     private readonly userConfig: UserConfig
   ) {
-    const caTLSCACerts = caConfig?.tlsCert ?? (caConfig?.tlsCertPath ? fs.readFileSync(caConfig.tlsCertPath).toString("utf-8") : undefined);
+    const caTLSCACerts =
+      caConfig?.tlsCert ??
+      (caConfig?.tlsCertPath ? fs.readFileSync(caConfig.tlsCertPath).toString("utf-8") : undefined);
     const tlsConfig = caTLSCACerts ? { trustedRoots: [caTLSCACerts], verify: false } : undefined;
     this.caClient = new FabricCAServices(caConfig.url, tlsConfig, caConfig.name);
     this.walletPromise = Wallets.newInMemoryWallet();
@@ -45,7 +47,7 @@ export class CAService {
     const wallet = await this.walletPromise;
 
     const identity = await wallet.get(this.userConfig.userId);
-    if (!!identity) {
+    if (identity) {
       return identity as IIdentity;
     }
 

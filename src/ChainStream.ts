@@ -1,8 +1,9 @@
-import { ChainService } from "./ChainService";
-import { ChainInfo } from "./types";
 import { BehaviorSubject, concatMap, expand, interval, of, range, switchMap, tap, timer } from "rxjs";
 import { bufferCount } from "rxjs/operators";
+
 import { CAService, IIdentity } from "./CAService";
+import { ChainService } from "./ChainService";
+import { ChainInfo } from "./types";
 
 const logger = {
   log(message: string) {
@@ -41,16 +42,18 @@ export class ChainStream {
   }
 
   public startPollingChainHeight(intervalMs: number) {
-    return interval(intervalMs).pipe(
-      switchMap(async () => {
-        const chainInfo = await this.queryChainInfo();
-        logger.log(`Polled chain info. Channel: ${chainInfo.channelName}, height: ${chainInfo.height}`);
-        return chainInfo;
-      })
-    ).subscribe({
-      next: (newInfo) => this.chainInfo.next(newInfo), // Update global height
-      error: (err) => logger.error("Error polling chain height:", err)
-    });
+    return interval(intervalMs)
+      .pipe(
+        switchMap(async () => {
+          const chainInfo = await this.queryChainInfo();
+          logger.log(`Polled chain info. Channel: ${chainInfo.channelName}, height: ${chainInfo.height}`);
+          return chainInfo;
+        })
+      )
+      .subscribe({
+        next: (newInfo) => this.chainInfo.next(newInfo), // Update global height
+        error: (err) => logger.error("Error polling chain height:", err)
+      });
   }
 
   public fromBlock(startBlock: number, batchSize: number, sleepIntervalMs: number) {
@@ -58,7 +61,6 @@ export class ChainStream {
 
     return of([]).pipe(
       expand(() => {
-
         if (currentBlock >= this.chainInfo.value.height) {
           return timer(sleepIntervalMs).pipe(
             tap(() => logger.log(`No new blocks, retrying after ${sleepIntervalMs} ms...`)),
@@ -81,7 +83,7 @@ export class ChainStream {
         );
       }),
 
-      concatMap(blocks => blocks)
+      concatMap((blocks) => blocks)
     );
   }
 
