@@ -6,7 +6,7 @@ import {
   interval,
   of,
   range,
-  retry, Subscription,
+  retry,
   switchMap,
   tap,
   timer
