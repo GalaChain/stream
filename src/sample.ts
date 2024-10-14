@@ -18,8 +18,10 @@ const config = {
   },
   stream: {
     chainInfoPollingIntervalMs: 2000,
-    sleepIntervalMs: 1000,
-    batchSize: 10
+    intervalMs: 1000,
+    batchSize: 10,
+    retryOnErrorDelayMs: 5000,
+    maxRetryCount: 5
   }
 };
 

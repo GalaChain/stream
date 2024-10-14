@@ -115,14 +115,20 @@ export class ChainService {
     };
   }
 
-  public async queryBlock(blockNumber: number): Promise<Block> {
+  public async queryBlocks(blockNumbers: number[]): Promise<Block[]> {
     if (!this.network) {
       throw new Error(`Network ${this.channelName} not connected`);
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const blocks = await Promise.all(
+      blockNumbers.map((blockNumber) => this.queryBlock(blockNumber, this.network!))
+    );
 
-    const querySystemCC = this.network.getContract("qscc");
+    return blocks;
+  }
+
+  private async queryBlock(blockNumber: number, network: Network): Promise<Block> {
+    const querySystemCC = network.getContract("qscc");
     const blockBuffer = await querySystemCC.evaluateTransaction(
       "GetBlockByNumber",
       this.channelName,
@@ -133,7 +139,7 @@ export class ChainService {
     const block = parseBlock(BlockDecoder.decode(convertedBlockBuffer));
 
     const codes = await this.queryTransactionCodes(
-      this.network,
+      network,
       block.transactions.map((tx) => tx.id)
     );
     block.transactions.forEach((t) => {
