@@ -1,18 +1,27 @@
-import { BehaviorSubject, concatMap, expand, interval, of, range, switchMap, tap, timer } from "rxjs";
+import {
+  BehaviorSubject,
+  catchError,
+  concatMap,
+  expand,
+  interval,
+  of,
+  range,
+  retry,
+  switchMap,
+  tap,
+  timer
+} from "rxjs";
 import { bufferCount } from "rxjs/operators";
 
 import { CAService, IIdentity } from "./CAService";
 import { ChainService } from "./ChainService";
 import { ChainInfo } from "./types";
 
-const logger = {
-  log(message: string) {
-    console.log(`[ChainStream] ${new Date().toISOString()}: ${message}`);
-  },
-  error(message: string, e: Error) {
-    console.error(`[ChainStream] ${new Date().toISOString()}: ${message}`, e);
-  }
-};
+export interface LoggerInterface {
+  log(message: string): void;
+  warn(message: string): void;
+  error(message: string, e: Error): void;
+}
 
 export class ChainStream {
   private readonly chainInfo: BehaviorSubject<ChainInfo>;
@@ -20,7 +29,8 @@ export class ChainStream {
 
   constructor(
     private readonly caService: CAService,
-    private readonly chainService: ChainService
+    private readonly chainService: ChainService,
+    private readonly logger: LoggerInterface
   ) {
     this.chainInfo = new BehaviorSubject<ChainInfo>({ height: 0, channelName: chainService.channelName });
   }
@@ -33,62 +43,96 @@ export class ChainStream {
   }
 
   private async queryChainInfo(): Promise<ChainInfo> {
+    const identity = await this.identity;
+
+    // note no promises inside (prevents from potential race condition)
     if (!this.chainService.isConnected()) {
-      const identity = await this.identity;
       this.chainService.connect(identity);
     }
 
     return this.chainService.queryChainInfo();
   }
 
-  public startPollingChainHeight(intervalMs: number) {
-    return interval(intervalMs)
+  public startPollingChainHeight(config: {
+    intervalMs: number;
+    retryOnErrorDelayMs: number;
+    maxRetryCount: number;
+  }) {
+    return interval(config.intervalMs)
       .pipe(
         switchMap(async () => {
-          const chainInfo = await this.queryChainInfo();
-          logger.log(`Polled chain info. Channel: ${chainInfo.channelName}, height: ${chainInfo.height}`);
-          return chainInfo;
+          const info = await this.queryChainInfo();
+          this.logger.log(`Polled chain info for channel ${info.channelName} (height: ${info.height})`);
+          return info;
+        }),
+
+        catchError((err) => {
+          const channel = this.chainInfo.value.channelName;
+          this.logger.warn(`Error polling chain height for channel ${channel}: ${err.message}`);
+          throw err; // Allow error to be caught by retry logic
+        }),
+
+        retry({
+          delay: config.retryOnErrorDelayMs,
+          count: config.maxRetryCount,
+          resetOnSuccess: true
         })
       )
       .subscribe({
         next: (newInfo) => this.chainInfo.next(newInfo), // Update global height
-        error: (err) => logger.error("Error polling chain height:", err)
+        error: (err) => this.logger.error("Polling chain height failed permanently:", err)
       });
   }
 
-  public fromBlock(startBlock: number, batchSize: number, sleepIntervalMs: number) {
+  public fromBlock(
+    startBlock: number,
+    config: { batchSize: number; intervalMs: number; retryOnErrorDelayMs: number; maxRetryCount: number }
+  ) {
     let currentBlock = startBlock; // Keep track of the current block we're fetching
 
     return of([]).pipe(
       expand(() => {
         if (currentBlock >= this.chainInfo.value.height) {
-          return timer(sleepIntervalMs).pipe(
-            tap(() => logger.log(`No new blocks, retrying after ${sleepIntervalMs} ms...`)),
+          return timer(config.intervalMs).pipe(
+            tap(() => this.logger.log(`No new blocks, retrying after ${config.intervalMs} ms...`)),
             switchMap(() => of([]))
           );
         }
 
         // Calculate how many blocks to fetch in the next batch
         const remainingBlocks = this.chainInfo.value.height - currentBlock;
-        const batchCount = Math.min(batchSize, remainingBlocks); // Don't fetch beyond the latest height
+        const batchCount = Math.min(config.batchSize, remainingBlocks); // Don't fetch beyond the latest height
 
         return range(currentBlock, batchCount).pipe(
-          bufferCount(batchSize), // Fetch in batches of batchSize
+          bufferCount(config.batchSize), // Fetch in batches of batchSize
+
+          tap((blockNums) => {
+            const channel = this.chainInfo.value.channelName;
+            this.logger.log(`Fetching blocks from channel ${channel}: ${blockNums.join(", ")}`);
+          }),
 
           switchMap(async (blockNums) => {
-            const blocks = await this.getBlocks(blockNums);
+            const blocks = await this.chainService.queryBlocks(blockNums);
             currentBlock = blockNums[blockNums.length - 1] + 1; // needs to be after getting blocks
             return blocks;
+          }),
+
+          catchError((err) => {
+            const channel = this.chainInfo.value.channelName;
+            this.logger.warn(`Error fetching blocks from channel ${channel}: ${err.message}`);
+            throw err;
+          }),
+
+          retry({
+            delay: config.retryOnErrorDelayMs,
+            count: config.maxRetryCount,
+            resetOnSuccess: true
           })
         );
       }),
 
       concatMap((blocks) => blocks)
     );
-  }
-
-  private async getBlocks(blockNums: number[]) {
-    return await Promise.all(blockNums.map((n) => this.chainService.queryBlock(n)));
   }
 
   public disconnect() {
