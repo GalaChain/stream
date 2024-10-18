@@ -15,15 +15,13 @@ export class ConnectedTransactionStream {
   ) {}
 
   fromBlock(number: number): Observable<StreamedTransaction> {
-    return this.stream
-      .fromBlock(number, this.config.batchSize, this.config.sleepIntervalMs, this.transactionFilter)
-      .pipe(
-        // Flatten the array of transactions
-        mergeMap((block) =>
-          block.transactions
-            .filter((t) => t.validationCode === TransactionValidationCode.VALID)
-            .map((transaction) => ({ ...transaction, blockNumber: block.blockNumber }))
-        )
-      );
+    return this.stream.fromBlock(number, this.config, this.transactionFilter).pipe(
+      // Flatten the array of transactions
+      mergeMap((block) =>
+        block.transactions
+          .filter((t) => t.validationCode === TransactionValidationCode.VALID)
+          .map((transaction) => ({ ...transaction, blockNumber: block.blockNumber }))
+      )
+    );
   }
 }

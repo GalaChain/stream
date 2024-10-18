@@ -124,13 +124,17 @@ export class ChainService {
     }
 
     const blocks = await Promise.all(
-      blockNumbers.map((blockNumber) => this.queryBlock(blockNumber, this.network!, transactionFilter)
+      blockNumbers.map((blockNumber) => this.queryBlock(blockNumber, this.network!, transactionFilter))
     );
 
     return blocks;
   }
 
-  private async queryBlock(blockNumber: number, network: Network, transactionFilter: TransactionFilter): Promise<Block> {
+  private async queryBlock(
+    blockNumber: number,
+    network: Network,
+    transactionFilter: TransactionFilter
+  ): Promise<Block> {
     const querySystemCC = network.getContract("qscc");
     const blockBuffer = await querySystemCC.evaluateTransaction(
       "GetBlockByNumber",

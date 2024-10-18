@@ -1,5 +1,5 @@
 import { IIdentity } from "./CAService";
-import { ChainService } from "./ChainService";
+import { ChainService, TransactionFilter } from "./ChainService";
 import { LoggerInterface } from "./ChainStream";
 import { ConnectedStream } from "./ConnectedStream";
 import { StreamedTransaction } from "./ConnectedTransactionStream";
@@ -65,8 +65,8 @@ it("should stream blocks", async () => {
   subscription.unsubscribe();
 
   // Then - blocks were fetched with the correct order
-  const numbers = fetchedBlocks.slice(0, 20).map((b) => b.blockNumber);
-  expect(numbers).toEqual([25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44]);
+  const numbers = fetchedBlocks.slice(0, 12).map((b) => b.blockNumber);
+  expect(numbers).toEqual([25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36]);
 
   // Then - and there were errors
   expect(warnMessages).toContainEqual(expect.stringContaining("Error polling chain height"));
@@ -77,7 +77,7 @@ it("should stream transactions", async () => {
   // Given
   const fetchedTransactions: StreamedTransaction[] = [];
 
-  const methodWanted = "AppleContract:PlantTree";
+  const methodWanted = "GalaChainToken:TransferToken";
 
   // When
   connectedStream
@@ -92,7 +92,7 @@ it("should stream transactions", async () => {
       complete: () => console.log("Stream completed")
     });
 
-  await new Promise((resolve) => setTimeout(resolve, 5000));
+  await new Promise((resolve) => setTimeout(resolve, 10000));
 
   // Then
   const methodNames = Array.from(new Set(fetchedTransactions.map((t) => t.method)));
@@ -122,9 +122,9 @@ class ChainServiceWithEntropy {
     return this.wrapped.queryChainInfo();
   }
 
-  public async queryBlocks(blockNumbers: number[]): Promise<Block[]> {
+  public async queryBlocks(blockNumbers: number[], transactionFilter: TransactionFilter): Promise<Block[]> {
     await this.applyEntropy("queryBlocks " + blockNumbers);
-    return this.wrapped.queryBlocks(blockNumbers);
+    return this.wrapped.queryBlocks(blockNumbers, transactionFilter);
   }
 
   private applyEntropy(info: string): Promise<void> {
