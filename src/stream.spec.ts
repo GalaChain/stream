@@ -1,4 +1,5 @@
 import { ConnectedStream } from "./ConnectedStream";
+import { StreamedTransaction } from "./ConnectedTransactionStream";
 import stream from "./stream";
 import { Block } from "./types";
 
@@ -34,4 +35,30 @@ it("should stream blocks", async () => {
   // Then
   const numbers = fetchedBlocks.slice(0, 10).map((b) => b.blockNumber);
   expect(numbers).toEqual([25, 26, 27, 28, 29, 30, 31, 32, 33, 34]);
+});
+
+it("should stream transactions", async () => {
+  // Given
+  const fetchedTransactions: StreamedTransaction[] = [];
+
+  const methodWanted = "AppleContract:PlantTree";
+
+  // When
+  connectedStream
+    .transactions((t) => t.method === methodWanted)
+    .fromBlock(0)
+    .subscribe({
+      next: (transaction) => {
+        console.log("Transaction:", transaction.id);
+        fetchedTransactions.push(transaction);
+      },
+      error: (err) => console.error("Error:", err),
+      complete: () => console.log("Stream completed")
+    });
+
+  await new Promise((resolve) => setTimeout(resolve, 5000));
+
+  // Then
+  const methodNames = Array.from(new Set(fetchedTransactions.map((t) => t.method)));
+  expect(methodNames).toEqual([methodWanted]);
 });

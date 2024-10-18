@@ -8,13 +8,16 @@ import fs from "fs";
 
 import { IIdentity } from "./CAService";
 import { parseBlock } from "./parseBlock";
-import { Block, ChainInfo, TransactionValidationCode } from "./types";
+import { Block, ChainInfo, Transaction, TransactionValidationCode } from "./types";
 
 export interface PeerConfig {
   url: string;
   tlsCACertPath: string;
   grpcHostnameOverride: string;
 }
+
+// we don't know the validation code when the filter is applied
+export type TransactionFilter = (transaction: Omit<Transaction, "validationCode">) => boolean;
 
 export class ChainService {
   private client: GrpcClient | undefined;
@@ -115,7 +118,7 @@ export class ChainService {
     };
   }
 
-  public async queryBlock(blockNumber: number): Promise<Block> {
+  public async queryBlock(blockNumber: number, transactionFilter: TransactionFilter): Promise<Block> {
     if (!this.network) {
       throw new Error(`Network ${this.channelName} not connected`);
     }
@@ -132,10 +135,15 @@ export class ChainService {
     const convertedBlockBuffer = blockBuffer instanceof Uint8Array ? Buffer.from(blockBuffer) : blockBuffer;
     const block = parseBlock(BlockDecoder.decode(convertedBlockBuffer));
 
+    // apply filter
+    block.transactions = block.transactions.filter(transactionFilter);
+
+    // query transaction codes
     const codes = await this.queryTransactionCodes(
       this.network,
       block.transactions.map((tx) => tx.id)
     );
+
     block.transactions.forEach((t) => {
       t.validationCode = codes[t.id] ?? TransactionValidationCode.UNKNOWN;
     });

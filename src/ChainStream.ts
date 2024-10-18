@@ -2,7 +2,7 @@ import { BehaviorSubject, concatMap, expand, interval, of, range, switchMap, tap
 import { bufferCount } from "rxjs/operators";
 
 import { CAService, IIdentity } from "./CAService";
-import { ChainService } from "./ChainService";
+import { ChainService, TransactionFilter } from "./ChainService";
 import { ChainInfo } from "./types";
 
 const logger = {
@@ -56,7 +56,12 @@ export class ChainStream {
       });
   }
 
-  public fromBlock(startBlock: number, batchSize: number, sleepIntervalMs: number) {
+  public fromBlock(
+    startBlock: number,
+    batchSize: number,
+    sleepIntervalMs: number,
+    transactionFilter: TransactionFilter = () => true
+  ) {
     let currentBlock = startBlock; // Keep track of the current block we're fetching
 
     return of([]).pipe(
@@ -76,7 +81,7 @@ export class ChainStream {
           bufferCount(batchSize), // Fetch in batches of batchSize
 
           switchMap(async (blockNums) => {
-            const blocks = await this.getBlocks(blockNums);
+            const blocks = await this.getBlocks(blockNums, transactionFilter);
             currentBlock = blockNums[blockNums.length - 1] + 1; // needs to be after getting blocks
             return blocks;
           })
@@ -87,8 +92,8 @@ export class ChainStream {
     );
   }
 
-  private async getBlocks(blockNums: number[]) {
-    return await Promise.all(blockNums.map((n) => this.chainService.queryBlock(n)));
+  private async getBlocks(blockNums: number[], transactionFilter: TransactionFilter) {
+    return await Promise.all(blockNums.map((n) => this.chainService.queryBlock(n, transactionFilter)));
   }
 
   public disconnect() {

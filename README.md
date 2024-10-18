@@ -24,6 +24,34 @@ stream
   });
 ```
 
+The sample code above connects to the network, subscribes to the `product-channel` channel, and starts streaming blocks from block number 9.
+It will get all transactions in the block, even invalid ones (e.g. those that failed with MVCC error).
+To get only valid transactions, you need to filter them out manually by transaction validation code.
+
+Using that sample is also hard and non-performant to filter given transactions (e.g. by chaincode name).
+This is why we support also a way to get only transactions that are valid and match given criteria:
+
+```typescript
+import stream from "@gala-chain/stream";
+
+stream
+  .connect(config)
+  .channel("product-channel")
+  .transactions(({ methodName }) => methodName === "GalaChainToken:TransferToken")
+  .fromBlock(3)
+  .subscribe({
+    next: (tx) => {
+      console.log("Transaction:", tx.transactionId, "from block:", tx.blockNumber);
+    },
+    error: (err) => {
+      console.error("Error:", err);
+    },
+    complete: () => {
+      console.log("Stream completed");
+    }
+  });
+```
+
 The `config` object should contain all the configuration needed to connect to the network.
 It can also be skipped to get default configuration, which is:
 
@@ -69,7 +97,7 @@ galachain init test-chaincode
 
 **Step 3**: Start the network for test chaincode
 ```bash
-(cd test-chaincode && npm run network:up)
+npm run network:up --prefix test-chaincode
 ```
 
 **Step 4**: Run the e2e tests for the chaincode to populate the network with some data
@@ -84,5 +112,5 @@ npx ts-node src/sample.ts
 
 Once you're done, you can stop the network by running:
 ```bash
-(cd test-chaincode && npm run network:prune)
+npm run network:prune --prefix test-chaincode
 ```
