@@ -86,7 +86,7 @@ export class StreamBuilder {
 
   public build(channelName: string): ConnectedStream {
     const caService = new CAService(this.ca, this.user);
-    const chainService = new ChainService(this.peer, channelName);
+    const chainService = new ChainService(this.peer, channelName, this.logger);
     const chainStream = new ChainStream(caService, chainService, this.logger);
     return new ConnectedStream(chainStream, this.streamConfig);
   }

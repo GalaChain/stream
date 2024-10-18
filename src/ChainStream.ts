@@ -69,6 +69,7 @@ export class ChainStream {
         catchError((err) => {
           const channel = this.chainInfo.value.channelName;
           this.logger.warn(`Error polling chain height for channel ${channel}: ${err.message}`);
+          this.chainService.reconnectIfNeeded();
           throw err; // Allow error to be caught by retry logic
         }),
 
@@ -121,6 +122,7 @@ export class ChainStream {
           catchError((err) => {
             const channel = this.chainInfo.value.channelName;
             this.logger.warn(`Error fetching blocks from channel ${channel}: ${err.message}`);
+            this.chainService.reconnectIfNeeded();
             throw err;
           }),
 
