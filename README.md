@@ -99,7 +99,7 @@ galachain init test-chaincode
 
 **Step 3**: Start the network for test chaincode
 ```bash
-npm run network:up --prefix test-chaincode
+(cd test-chaincode && npm run network:up)
 ```
 
 **Step 4**: Run the e2e tests for the chaincode to populate the network with some data
@@ -114,5 +114,5 @@ npx ts-node src/sample.ts
 
 Once you're done, you can stop the network by running:
 ```bash
-npm run network:prune --prefix test-chaincode
+(cd test-chaincode && npm run network:prune)
 ```
