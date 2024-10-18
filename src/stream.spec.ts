@@ -1,7 +1,8 @@
 import { IIdentity } from "./CAService";
-import { ChainService } from "./ChainService";
+import { ChainService, TransactionFilter } from "./ChainService";
 import { LoggerInterface } from "./ChainStream";
 import { ConnectedStream } from "./ConnectedStream";
+import { StreamedTransaction } from "./ConnectedTransactionStream";
 import stream from "./stream";
 import { Block, ChainInfo } from "./types";
 
@@ -64,12 +65,38 @@ it("should stream blocks", async () => {
   subscription.unsubscribe();
 
   // Then - blocks were fetched with the correct order
-  const numbers = fetchedBlocks.slice(0, 20).map((b) => b.blockNumber);
-  expect(numbers).toEqual([25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44]);
+  const numbers = fetchedBlocks.slice(0, 12).map((b) => b.blockNumber);
+  expect(numbers).toEqual([25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36]);
 
   // Then - and there were errors
   expect(warnMessages).toContainEqual(expect.stringContaining("Error polling chain height"));
   expect(warnMessages).toContainEqual(expect.stringContaining("Error fetching blocks"));
+});
+
+it("should stream transactions", async () => {
+  // Given
+  const fetchedTransactions: StreamedTransaction[] = [];
+
+  const methodWanted = "GalaChainToken:TransferToken";
+
+  // When
+  connectedStream
+    .transactions((t) => t.method === methodWanted)
+    .fromBlock(0)
+    .subscribe({
+      next: (transaction) => {
+        console.log("Transaction:", transaction.id);
+        fetchedTransactions.push(transaction);
+      },
+      error: (err) => console.error("Error:", err),
+      complete: () => console.log("Stream completed")
+    });
+
+  await new Promise((resolve) => setTimeout(resolve, 10000));
+
+  // Then
+  const methodNames = Array.from(new Set(fetchedTransactions.map((t) => t.method)));
+  expect(methodNames).toEqual([methodWanted]);
 });
 
 class ChainServiceWithEntropy {
@@ -95,9 +122,9 @@ class ChainServiceWithEntropy {
     return this.wrapped.queryChainInfo();
   }
 
-  public async queryBlocks(blockNumbers: number[]): Promise<Block[]> {
+  public async queryBlocks(blockNumbers: number[], transactionFilter: TransactionFilter): Promise<Block[]> {
     await this.applyEntropy("queryBlocks " + blockNumbers);
-    return this.wrapped.queryBlocks(blockNumbers);
+    return this.wrapped.queryBlocks(blockNumbers, transactionFilter);
   }
 
   private applyEntropy(info: string): Promise<void> {

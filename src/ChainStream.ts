@@ -14,7 +14,7 @@ import {
 import { bufferCount } from "rxjs/operators";
 
 import { CAService, IIdentity } from "./CAService";
-import { ChainService } from "./ChainService";
+import { ChainService, TransactionFilter } from "./ChainService";
 import { ChainInfo } from "./types";
 
 export interface LoggerInterface {
@@ -86,7 +86,8 @@ export class ChainStream {
 
   public fromBlock(
     startBlock: number,
-    config: { batchSize: number; intervalMs: number; retryOnErrorDelayMs: number; maxRetryCount: number }
+    config: { batchSize: number; intervalMs: number; retryOnErrorDelayMs: number; maxRetryCount: number },
+    transactionFilter: TransactionFilter = () => true
   ) {
     let currentBlock = startBlock; // Keep track of the current block we're fetching
 
@@ -112,7 +113,7 @@ export class ChainStream {
           }),
 
           switchMap(async (blockNums) => {
-            const blocks = await this.chainService.queryBlocks(blockNums);
+            const blocks = await this.chainService.queryBlocks(blockNums, transactionFilter);
             currentBlock = blockNums[blockNums.length - 1] + 1; // needs to be after getting blocks
             return blocks;
           }),

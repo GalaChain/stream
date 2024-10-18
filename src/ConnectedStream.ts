@@ -1,6 +1,8 @@
 import { Observable, Subscription } from "rxjs";
 
+import { TransactionFilter } from "./ChainService";
 import { ChainStream } from "./ChainStream";
+import { ConnectedTransactionStream } from "./ConnectedTransactionStream";
 import { Block } from "./types";
 
 export interface StreamConfig {
@@ -32,6 +34,10 @@ export class ConnectedStream {
       retryOnErrorDelayMs: this.streamConfig.retryOnErrorDelayMs,
       maxRetryCount: this.streamConfig.maxRetryCount
     });
+  }
+
+  public transactions(filter: TransactionFilter = () => true): ConnectedTransactionStream {
+    return new ConnectedTransactionStream(this.chainStream, this.streamConfig, filter);
   }
 
   public disconnect(): void {
