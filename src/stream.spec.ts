@@ -39,7 +39,7 @@ beforeAll(() => {
       logger
     })
     .channel("product-channel");
-  addEntropy(connectedStream);
+  addEntropy(connectedStream, logger);
 });
 
 afterAll(() => {
@@ -71,6 +71,7 @@ it("should stream blocks", async () => {
   // Then - and there were errors
   expect(warnMessages).toContainEqual(expect.stringContaining("Error polling chain height"));
   expect(warnMessages).toContainEqual(expect.stringContaining("Error fetching blocks"));
+  expect(warnMessages).toContainEqual(expect.stringContaining("Channel has been shut down"));
 });
 
 it("should stream transactions", async () => {
@@ -102,14 +103,25 @@ it("should stream transactions", async () => {
 class ChainServiceWithEntropy {
   private readonly errorRate = 0.4;
   private readonly maxDelayMs = 500;
+  private readonly closeGrpcConnectionIntervalMs = 2000;
+  private readonly closeGrpcInterval: NodeJS.Timer;
 
-  constructor(private readonly wrapped: ChainService) {}
+  constructor(
+    private readonly wrapped: ChainService,
+    private readonly logger: LoggerInterface
+  ) {
+    this.closeGrpcInterval = setInterval(() => {
+      this.logger.log("Forcefully closing grpc connection");
+      (this.wrapped as unknown as { client: { close: () => void } }).client.close();
+    }, this.closeGrpcConnectionIntervalMs);
+  }
 
   public connect(identity: IIdentity): void {
     this.wrapped.connect(identity);
   }
 
   public disconnect(): void {
+    clearInterval(this.closeGrpcInterval);
     this.wrapped.disconnect();
   }
 
@@ -140,7 +152,7 @@ class ChainServiceWithEntropy {
   }
 }
 
-function addEntropy(s: ConnectedStream) {
+function addEntropy(s: ConnectedStream, logger: LoggerInterface): void {
   const { chainStream } = s as unknown as {
     chainStream: { chainService: ChainService | ChainServiceWithEntropy };
   };
@@ -149,6 +161,6 @@ function addEntropy(s: ConnectedStream) {
   expect(chainStream.chainService).toBeInstanceOf(ChainService);
 
   // but we want to change it to the implementation with entropy
-  chainStream.chainService = new ChainServiceWithEntropy(chainStream.chainService as ChainService);
+  chainStream.chainService = new ChainServiceWithEntropy(chainStream.chainService as ChainService, logger);
   expect(chainStream.chainService).toBeInstanceOf(ChainServiceWithEntropy);
 }
