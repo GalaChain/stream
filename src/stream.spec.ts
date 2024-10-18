@@ -100,6 +100,32 @@ it("should stream transactions", async () => {
   expect(methodNames).toEqual([methodWanted]);
 });
 
+it("should stream transactions", async () => {
+  // Given
+  const fetchedTransactions: StreamedTransaction[] = [];
+
+  const methodWanted = "GalaChainToken:TransferToken";
+
+  // When
+  connectedStream
+    .transactions((t) => t.method === methodWanted)
+    .fromBlock(0)
+    .subscribe({
+      next: (transaction) => {
+        console.log("Transaction:", transaction.id);
+        fetchedTransactions.push(transaction);
+      },
+      error: (err) => console.error("Error:", err),
+      complete: () => console.log("Stream completed")
+    });
+
+  await new Promise((resolve) => setTimeout(resolve, 10000));
+
+  // Then
+  const methodNames = Array.from(new Set(fetchedTransactions.map((t) => t.method)));
+  expect(methodNames).toEqual([methodWanted]);
+});
+
 class ChainServiceWithEntropy {
   private readonly errorRate = 0.4;
   private readonly maxDelayMs = 500;
