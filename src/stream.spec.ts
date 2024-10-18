@@ -61,7 +61,7 @@ it("should stream blocks", async () => {
     complete: () => logger.log("Stream completed")
   });
 
-  await new Promise((resolve) => setTimeout(resolve, 10000));
+  await new Promise((resolve) => setTimeout(resolve, 15 * 1000));
   subscription.unsubscribe();
 
   // Then - blocks were fetched with the correct order
@@ -93,7 +93,7 @@ it("should stream transactions", async () => {
       complete: () => console.log("Stream completed")
     });
 
-  await new Promise((resolve) => setTimeout(resolve, 10000));
+  await new Promise((resolve) => setTimeout(resolve, 15 * 1000));
 
   // Then
   const methodNames = Array.from(new Set(fetchedTransactions.map((t) => t.method)));
@@ -127,6 +127,10 @@ class ChainServiceWithEntropy {
 
   public isConnected(): boolean {
     return this.wrapped.isConnected();
+  }
+
+  public reconnectIfNeeded(): void {
+    this.wrapped.reconnectIfNeeded();
   }
 
   public async queryChainInfo(): Promise<ChainInfo> {

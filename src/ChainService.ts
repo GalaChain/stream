@@ -7,6 +7,7 @@ import { common as fabricProtos } from "fabric-protos";
 import fs from "fs";
 
 import { IIdentity } from "./CAService";
+import { LoggerInterface } from "./ChainStream";
 import { parseBlock } from "./parseBlock";
 import { Block, ChainInfo, Transaction, TransactionValidationCode } from "./types";
 
@@ -23,13 +24,17 @@ export class ChainService {
   private client: GrpcClient | undefined;
   private gateway: Gateway | undefined;
   private network: Network | undefined;
+  private identity: IIdentity | undefined;
 
   constructor(
     private readonly peer: PeerConfig,
-    public readonly channelName: string
+    public readonly channelName: string,
+    private readonly logger: LoggerInterface
   ) {}
 
   public connect(identity: IIdentity): void {
+    this.logger.log(`Connecting to channel ${this.channelName}`);
+
     if (this.client) {
       throw new Error("Client already connected");
     }
@@ -37,6 +42,8 @@ export class ChainService {
     if (this.gateway) {
       throw new Error("Gateway already connected");
     }
+
+    this.identity = identity;
 
     const peerEndpoint = this.peer.url.replace("grpcs://", "");
     const tlsCACert = fs.readFileSync(this.peer.tlsCACertPath);
@@ -78,6 +85,8 @@ export class ChainService {
   }
 
   public disconnect(): void {
+    this.logger.log(`Disconnecting from channel ${this.channelName}`);
+
     this.network = undefined;
 
     if (this.gateway) {
@@ -100,6 +109,22 @@ export class ChainService {
 
   public isConnected(): boolean {
     return !!this.network;
+  }
+
+  public reconnectIfNeeded(): void {
+    this.logger.log(`Reconnecting to channel ${this.channelName}`);
+
+    const currentState = this.client?.getChannel()?.getConnectivityState(false);
+    if (currentState !== grpc.connectivityState.READY) {
+      this.disconnect();
+      if (this.identity) {
+        this.connect(this.identity);
+      } else {
+        const err = new Error(`Identity not set for reconnect to channel ${this.channelName}`);
+        this.logger.error(err.message, err);
+        throw err;
+      }
+    }
   }
 
   public async queryChainInfo(): Promise<ChainInfo> {
