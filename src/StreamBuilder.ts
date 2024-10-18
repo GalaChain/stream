@@ -1,6 +1,6 @@
 import { CAConfig, CAService, UserConfig } from "./CAService";
 import { ChainService, PeerConfig } from "./ChainService";
-import { ChainStream } from "./ChainStream";
+import { ChainStream, LoggerInterface } from "./ChainStream";
 import { ConnectedStream, StreamConfig } from "./ConnectedStream";
 
 const defaultCaConfig = {
@@ -23,8 +23,22 @@ const defaultPeerConfig = {
 
 const defaultStreamConfig = {
   chainInfoPollingIntervalMs: 2000,
-  sleepIntervalMs: 500,
-  batchSize: 10
+  intervalMs: 500,
+  batchSize: 10,
+  retryOnErrorDelayMs: 5000,
+  maxRetryCount: 5
+};
+
+const defaultLogger: LoggerInterface = {
+  log(message: string) {
+    console.log(`[ChainStream] ${new Date().toISOString()}: ${message}`);
+  },
+  warn(message: string) {
+    console.warn(`[ChainStream] ${new Date().toISOString()}: ${message}`);
+  },
+  error(message: string, e: Error) {
+    console.error(`[ChainStream] ${new Date().toISOString()}: ${message}`, e);
+  }
 };
 
 export interface ConnectionParams {
@@ -32,6 +46,7 @@ export interface ConnectionParams {
   user?: Partial<UserConfig>;
   peer?: Partial<PeerConfig>;
   stream?: Partial<StreamConfig>;
+  logger?: LoggerInterface;
 }
 
 export class StreamBuilder {
@@ -39,6 +54,7 @@ export class StreamBuilder {
   private readonly user: UserConfig;
   private readonly peer: PeerConfig;
   private readonly streamConfig: StreamConfig;
+  private readonly logger: LoggerInterface;
 
   constructor(params: ConnectionParams) {
     this.ca = {
@@ -60,15 +76,18 @@ export class StreamBuilder {
     this.streamConfig = {
       chainInfoPollingIntervalMs:
         params.stream?.chainInfoPollingIntervalMs ?? defaultStreamConfig.chainInfoPollingIntervalMs,
-      sleepIntervalMs: params.stream?.sleepIntervalMs ?? defaultStreamConfig.sleepIntervalMs,
-      batchSize: params.stream?.batchSize ?? defaultStreamConfig.batchSize
+      intervalMs: params.stream?.intervalMs ?? defaultStreamConfig.intervalMs,
+      batchSize: params.stream?.batchSize ?? defaultStreamConfig.batchSize,
+      retryOnErrorDelayMs: params.stream?.retryOnErrorDelayMs ?? defaultStreamConfig.retryOnErrorDelayMs,
+      maxRetryCount: params.stream?.maxRetryCount ?? defaultStreamConfig.maxRetryCount
     };
+    this.logger = params.logger ?? defaultLogger;
   }
 
   public build(channelName: string): ConnectedStream {
     const caService = new CAService(this.ca, this.user);
     const chainService = new ChainService(this.peer, channelName);
-    const chainStream = new ChainStream(caService, chainService);
+    const chainStream = new ChainStream(caService, chainService, this.logger);
     return new ConnectedStream(chainStream, this.streamConfig);
   }
 }
