@@ -2,7 +2,7 @@
 
 A Node.js library to stream blocks from GalaChain or Hyperledger Fabric network as RxJS Observables.
 
-Sample usage:
+## Sample: Block stream
 
 ```typescript
 import stream from "@gala-chain/stream";
@@ -24,7 +24,9 @@ stream
   });
 ```
 
-The sample code above connects to the network, subscribes to the `product-channel` channel, and starts streaming blocks from block number 9.
+## Sample: Transaction stream
+
+The previous sample connects to the network, subscribes to the `product-channel` channel, and starts streaming blocks from block number 9.
 It will get all transactions in the block, even invalid ones (e.g. those that failed with MVCC error).
 To get only valid transactions, you need to filter them out manually by transaction validation code.
 
@@ -51,6 +53,8 @@ stream
     }
   });
 ```
+
+## Configuration
 
 The `config` object should contain all the configuration needed to connect to the network.
 It can also be skipped to get default configuration, which is:
