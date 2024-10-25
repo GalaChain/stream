@@ -34,6 +34,8 @@ Using that sample is also hard and non-performant to filter given transactions (
 This is why we support also a way to get only transactions that are valid and match given criteria:
 
 ```typescript
+import stream from "@gala-chain/stream";
+
 stream
   .connect(config)
   .channel("product-channel")
