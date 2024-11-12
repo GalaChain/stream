@@ -44,13 +44,10 @@ jobs:
         run: npm install -g @gala-chain/cli
       - name: Create test project
         run: galachain init ./test-chaincode
-      - name: Unset npm_config_prefix
-        shell: bash
-        run: unset npm_config_prefix
       - name: Install dependencies
         run: |
           
-          (cd test-chaincode && npm run network:up && cd ..)
+          (cd test-chaincode && unset npm_config_prefix && npm run network:up && cd ..)
           npm i --prefix ./test-chaincode
       - name: Run e2e tests
         run: npm run test:e2e --prefix ./test-chaincode
