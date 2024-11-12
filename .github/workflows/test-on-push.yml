@@ -24,8 +24,6 @@ jobs:
         run: npm run build
       - name: Lint
         run: npm run lint
-      - name: Test
-        run: npm run test
 
   e2e-ci:
     name: Run e2e test
@@ -53,6 +51,8 @@ jobs:
       - name: Run E2E tests
         run: npm run test:e2e --prefix ./project-test
       - name: Stream blocks from the network
-        run: npx ts-node src/sample.ts
+        run: timeout 15s npx ts-node src/sample.ts
+      - name: Test
+        run: npm run test
       - name: Clean-up
         run: npm run network:prune
