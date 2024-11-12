@@ -1,0 +1,75 @@
+name: Test on push
+on:
+  push:
+    tags: [v*]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Verify copyright
+        run: ./verify_copyright.sh
+      - name: Install Node 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install dependencies
+        run: npm i
+      - name: Build
+        run: npm run build
+      - name: Lint
+        run: npm run lint
+      - name: Test
+        run: npm run test
+
+  ensure-docker-cache:
+    name: Ensure Docker cache
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Cache Docker images
+        uses: ScribeMD/docker-cache@0.5.0
+        with:
+          key: docker-${{ runner.os }}-${{ github.ref_name }}
+      - name: Prefetch Fabric Docker layers
+        run: |
+          cd chain-cli/network
+          curl -Lf https://github.com/hyperledger-labs/fablo/releases/download/1.2.0/fablo.sh -o ./fablo && chmod +x ./fablo
+          ./fablo generate fablo-config-default.json
+          docker compose -f fablo-target/fabric-docker/docker-compose.yaml pull
+
+  template-ci:
+    name: Chaincode template CI
+    runs-on: ubuntu-latest
+    needs: [ci, ensure-docker-cache]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Cache Docker images
+        uses: ScribeMD/docker-cache@0.5.0
+        with:
+          key: docker-${{ runner.os }}-${{ github.ref_name }}
+      - name: Install local CLI
+        run: npm install -g @gala-chain/cli
+      - name: Create test project
+        run: galachain init ./test-chaincode
+      - name: Install dependencies
+        run: |
+          (cd ./project-test && npm run network:up)
+          npm i --prefix ./project-test
+      - name: Run E2E tests
+        run: npm run test:e2e --prefix ./project-test
+      - name: Stream blocks from the network
+        run: npx ts-node src/sample.ts
+      - name: Clean-up
+        run: npm run network:prune
