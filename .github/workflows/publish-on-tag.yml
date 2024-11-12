@@ -6,7 +6,6 @@ on:
   workflow_dispatch:
 
 env:
-  PAGES_BRANCH: gh-pages
   HTTPS_REMOTE: "https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
 
 jobs:
@@ -20,7 +19,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 22
       - name: Install Dependencies
         run: npm i
       - name: Set up version
@@ -37,7 +36,7 @@ jobs:
           npm publish --access public
 
   bump-version:
-    needs: [publish, publish-cli-image]
+    needs: [publish]
     if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
     name: Bump SDK Version
     runs-on: ubuntu-latest
@@ -67,7 +66,7 @@ jobs:
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
       - name: Bump version and commit changes
         run: |
-          ./unifyVersions.js $VERSION
+          npm version $VERSION
           npm i
           git commit -am "Bump version to $VERSION"
           git push --set-upstream origin bump-version-to-$VERSION
@@ -75,18 +74,3 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
         run: gh pr create --title "Bump Version to $VERSION" --body "Bump Version to $VERSION" --label "bump-version-pr" --head "bump-version-to-$VERSION" --base main
-
-  notify-tag:
-    needs: [publish, publish-cli-image]
-    if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
-    name: Notify Tag
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger GitLab Pipeline
-        id: trigger
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data "{
-              \"channel\": \"#releases\",
-              \"username\": \"Tag Reporter Bot\",
-              \"text\": Galachain Stream ${{ github.ref_name }} Released by ${{ github.actor }}\n${{ github.event.head_commit.message }}
-          }" ${{ secrets.SLACK_TAG_WEBHOOK_URL }}
