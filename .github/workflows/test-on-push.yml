@@ -47,7 +47,9 @@ jobs:
       - name: Install dependencies
         run: |
           npm i --prefix ./test-chaincode 
-          (cd test-chaincode && unset npm_config_prefix && npm run network:up && cd ..)
+          unset npm_config_prefix
+          nvm install 18
+          (cd test-chaincode &&  && npm run network:up && cd ..)
       - name: Run e2e tests
         run: npm run test:e2e --prefix ./test-chaincode
       - name: Stream blocks from the network
