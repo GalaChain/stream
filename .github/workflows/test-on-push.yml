@@ -50,10 +50,9 @@ jobs:
           curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm install 18
           nvm use 18
           npm i --prefix ./test-chaincode 
-          unset npm_config_prefix
-          nvm install 18
           (cd test-chaincode &&  && npm run network:up && cd ..)
       - name: Run e2e tests
         run: npm run test:e2e --prefix ./test-chaincode
