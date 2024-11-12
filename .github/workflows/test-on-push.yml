@@ -50,7 +50,7 @@ jobs:
           curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          nvm install 18
+          nvm install 18.20.4
           npm i
           npm i --prefix ./test-chaincode 
           (cd test-chaincode && npm run network:up && cd ..)
