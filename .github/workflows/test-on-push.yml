@@ -57,8 +57,12 @@ jobs:
       - name: Run e2e tests
         run: npm run test:e2e --prefix ./test-chaincode
       - name: Stream blocks from the network
-        run: timeout 15s npx ts-node src/sample.ts || true
+        run:
+          timeout 15s npx ts-node src/sample.ts || true
       - name: Test
-        run: npm run test
+        run: |
+          nvm install 22
+          npm run build
+          npm run test
       - name: Clean-up
         run: npm run network:prune
