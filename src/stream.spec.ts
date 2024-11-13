@@ -145,7 +145,7 @@ class ChainServiceWithEntropy {
   private readonly errorRate = 0.4;
   private readonly maxDelayMs = 500;
   private readonly closeGrpcConnectionIntervalMs = 2000;
-  private readonly closeGrpcInterval: NodeJS.Timer;
+  private readonly closeGrpcInterval: NodeJS.Timeout;
 
   constructor(
     private readonly wrapped: ChainService,
