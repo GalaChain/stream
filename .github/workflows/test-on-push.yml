@@ -68,4 +68,4 @@ jobs:
           npm run build
           npm run test
       - name: Clean-up
-        run: npm run network:prune
+        run: (cd test-chaincode && npm run network:prune)
