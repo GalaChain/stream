@@ -39,11 +39,11 @@ import stream from "@gala-chain/stream";
 stream
   .connect(config)
   .channel("product-channel")
-  .transactions(({ methodName }) => methodName === "GalaChainToken:TransferToken")
+  .transactions(({ method }) => method === "GalaChainToken:TransferToken")
   .fromBlock(3)
   .subscribe({
     next: (tx) => {
-      console.log("Transaction:", tx.transactionId, "from block:", tx.blockNumber);
+      console.log("Transaction:", tx.id, "from block:", tx.blockNumber);
     },
     error: (err) => {
       console.error("Error:", err);
@@ -85,7 +85,7 @@ const config = {
 };
 ```
 
-See also the usage sample at `./src/sample.ts`.
+See also the usage sample at `./src/sample-transactions.ts`.
 
 ## The end-to-end sample
 
@@ -111,9 +111,15 @@ galachain init test-chaincode
 (cd .. && npm run test:e2e --prefix test-chaincode)
 ```
 
-**Step 5**: Stream blocks from the network
+**Step 5**: Stream blocks or transactions from the network
 ```bash
-npx ts-node src/sample.ts
+npx ts-node src/sample-blocks.ts
+```
+
+Or:
+
+```bash
+npx ts-node src/sample-transactions.ts
 ```
 
 Once you're done, you can stop the network by running:

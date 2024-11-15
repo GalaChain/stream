@@ -84,7 +84,7 @@ it("should stream blocks", async () => {
   expect(numbers).toEqual([25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36]);
 
   // Then - and there were errors
-  expect(warnMessages).toContainEqual(expect.stringContaining("Error polling chain height"));
+  expect(warnMessages).toContainEqual(expect.stringContaining("Error polling chain info"));
   expect(warnMessages).toContainEqual(expect.stringContaining("Error fetching blocks"));
   expect(warnMessages).toContainEqual(expect.stringContaining("Channel has been shut down"));
 });
