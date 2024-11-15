@@ -6,7 +6,8 @@
     "declarationDir": "lib",
     "composite": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "types": ["node"]
   },
   "files": [],
   "include": ["src/**/*.ts"],

@@ -108,7 +108,7 @@ galachain init test-chaincode
 
 **Step 4**: Run the e2e tests for the chaincode to populate the network with some data
 ```bash
-npm run test:e2e --prefix test-chaincode
+(cd .. && npm run test:e2e --prefix test-chaincode)
 ```
 
 **Step 5**: Stream blocks or transactions from the network
