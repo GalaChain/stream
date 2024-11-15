@@ -1,3 +1,17 @@
+/*
+ * Copyright (c) Gala Games Inc. All rights reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 import stream from "./index";
 
 const config = {
@@ -28,10 +42,11 @@ const config = {
 stream
   .connect(config)
   .channel("product-channel")
-  .fromBlock(9)
+  .transactions(({ method }) => method === "GalaChainToken:TransferToken")
+  .fromBlock(3)
   .subscribe({
-    next: (block) => {
-      console.log("Block:", block.blockNumber);
+    next: (tx) => {
+      console.log("Transaction:", tx.id, "from block:", tx.blockNumber);
     },
     error: (err) => {
       console.error("Error:", err);

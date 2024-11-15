@@ -1,0 +1,71 @@
+name: Test on push
+on:
+  push:
+    tags: [v*]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Verify copyright
+        run: ./verify_copyright.sh
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm i
+      - name: Build
+        run: npm run build
+      - name: Lint
+        run: npm run lint
+
+  e2e-ci:
+    name: Run e2e test
+    runs-on: ubuntu-latest
+    needs: [ci]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.20.5
+      - name: Cache Docker images
+        uses: ScribeMD/docker-cache@0.5.0
+        with:
+          key: docker-${{ runner.os }}-${{ github.ref_name }}
+      - name: Install local CLI
+        run: npm install -g @gala-chain/cli
+      - name: Create test project
+        run: galachain init ./test-chaincode
+      - name: Install dependencies
+        run: |
+          unset npm_config_prefix
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm install 18.20.5
+          npm i
+          npm i --prefix ./test-chaincode 
+          (cd test-chaincode && npm run network:up && cd ..)
+      - name: Run e2e tests
+        run: npm run test:e2e --prefix ./test-chaincode
+      - name: Stream blocks from the network
+        run:
+          timeout 15s npx ts-node src/sample.ts || true
+      - name: Test
+        run: |
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm install 22
+          npm run build
+          npm run test
+      - name: Clean-up
+        run: (cd test-chaincode && npm run network:prune)

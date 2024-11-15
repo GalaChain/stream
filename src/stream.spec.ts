@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) Gala Games Inc. All rights reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import { IIdentity } from "./CAService";
 import { ChainService, TransactionFilter } from "./ChainService";
 import { LoggerInterface } from "./ChainStream";
@@ -69,7 +84,7 @@ it("should stream blocks", async () => {
   expect(numbers).toEqual([25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36]);
 
   // Then - and there were errors
-  expect(warnMessages).toContainEqual(expect.stringContaining("Error polling chain height"));
+  expect(warnMessages).toContainEqual(expect.stringContaining("Error polling chain info"));
   expect(warnMessages).toContainEqual(expect.stringContaining("Error fetching blocks"));
   expect(warnMessages).toContainEqual(expect.stringContaining("Channel has been shut down"));
 });
@@ -130,7 +145,7 @@ class ChainServiceWithEntropy {
   private readonly errorRate = 0.4;
   private readonly maxDelayMs = 500;
   private readonly closeGrpcConnectionIntervalMs = 2000;
-  private readonly closeGrpcInterval: NodeJS.Timer;
+  private readonly closeGrpcInterval: NodeJS.Timeout;
 
   constructor(
     private readonly wrapped: ChainService,
