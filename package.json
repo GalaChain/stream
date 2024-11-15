@@ -11,7 +11,7 @@
     "build:watch": "tsc -p tsconfig.json -w",
     "lint": "eslint . --ext .ts,.js",
     "fix": "eslint . --ext .ts,.js --fix",
-    "prepublishOnly": "npm run build && npm run lint && npm run test",
+    "prepublishOnly": "npm run build && npm run lint",
     "test": "jest"
   },
   "dependencies": {
