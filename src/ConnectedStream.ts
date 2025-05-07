@@ -21,12 +21,10 @@ import { ConnectedTransactionStream } from "./ConnectedTransactionStream";
 import { Block } from "./types";
 
 export interface StreamConfig {
-  chainInfoPollingIntervalMs: number;
-  intervalMs: number;
-  batchSize: number;
-  retryOnErrorDelayMs: number;
-  maxRetryCount: number;
   gracePeriodMs: number;
+  retryOnErrorDelayMs: number;
+  batchSize: number;
+  maxRetryCount: number;
 }
 
 export class ConnectedStream {
@@ -37,19 +35,18 @@ export class ConnectedStream {
     private readonly streamConfig: StreamConfig
   ) {
     this.chainHeightSubscription = chainStream.startPollingChainHeight({
-      intervalMs: streamConfig.chainInfoPollingIntervalMs,
-      retryOnErrorDelayMs: streamConfig.retryOnErrorDelayMs,
-      maxRetryCount: streamConfig.maxRetryCount
+      gracePeriodMs: this.streamConfig.gracePeriodMs,
+      retryOnErrorDelayMs: this.streamConfig.retryOnErrorDelayMs,
+      maxRetryCount: this.streamConfig.maxRetryCount
     });
   }
 
   public fromBlock(number: number): Observable<Block> {
     return this.chainStream.fromBlock(number, {
-      intervalMs: this.streamConfig.intervalMs,
+      gracePeriodMs: this.streamConfig.gracePeriodMs,
       batchSize: this.streamConfig.batchSize,
       retryOnErrorDelayMs: this.streamConfig.retryOnErrorDelayMs,
-      maxRetryCount: this.streamConfig.maxRetryCount,
-      gracePeriodMs: this.streamConfig.gracePeriodMs
+      maxRetryCount: this.streamConfig.maxRetryCount
     });
   }
 
