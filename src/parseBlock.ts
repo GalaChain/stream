@@ -17,6 +17,7 @@ import { X509Certificate } from "crypto";
 import { sha256 } from "js-sha256";
 
 import { Block, RangeRead, Read, Transaction, TransactionValidationCode, Write } from "./types";
+import { inspect } from "util";
 
 export interface RWSet {
   namespace: string;
@@ -48,6 +49,7 @@ export function parseOrString(s: string): Record<string, unknown> | string {
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export function parseBlock(block: any): Block {
+  console.log("block", inspect(block, { depth: null, colors: true }));
   const rawTransactions = block.data.data;
   const firstTransactionHeader = rawTransactions[0].payload.header;
 
@@ -56,6 +58,8 @@ export function parseBlock(block: any): Block {
   const createdAt = new Date(firstTransactionHeader.channel_header.timestamp);
 
   const transactions: Array<Transaction> = [];
+
+  console.log("rawTransactions", rawTransactions.length);
 
   for (const rawTransaction of rawTransactions) {
     const transactionHeader = rawTransaction.payload.header;
@@ -72,7 +76,7 @@ export function parseBlock(block: any): Block {
     const subjectMatch = cert.subject.match(/OU=(\w+).*CN=(\w+)/s);
     const creatorName = subjectMatch ? (subjectMatch[1] ?? "") + "|" + (subjectMatch[2] ?? "") : "|";
 
-    let chaincodeRWSets: Array<RWSet>;
+    let rwSets: Array<RWSet>;
 
     if (transactionType === "ENDORSER_TRANSACTION") {
       if (!rawTransaction.payload.data.actions) continue;
@@ -90,8 +94,8 @@ export function parseBlock(block: any): Block {
         version: action.payload.action.proposal_response_payload.extension.chaincode_id.version
       };
 
-      const allRWSets = action.payload.action.proposal_response_payload.extension.results.ns_rwset;
-      chaincodeRWSets = allRWSets.filter(({ namespace }) => namespace === chaincode.name) as Array<RWSet>;
+      rwSets = action.payload.action.proposal_response_payload.extension.results.ns_rwset as Array<RWSet>;
+      console.log("rwSets", inspect(rwSets, { depth: null, colors: true }));
 
       if (transactionType === "CONFIG") {
         txId = sha256(JSON.stringify(rawTransaction));
@@ -103,15 +107,17 @@ export function parseBlock(block: any): Block {
         rangeReads: []
       };
 
-      const sets = chaincodeRWSets.reduce((acc, set) => {
+      const sets = rwSets.reduce((acc, set) => {
         const { reads, writes, range_queries_info } = set.rwset;
 
         const parsedReads = reads.map((read) => ({
+          namespace: set.namespace,
           key: read.key.replace("\0", "/")
         }));
         acc.reads.push(...parsedReads);
 
         const rangeReads = range_queries_info.map((range) => ({
+          namespace: set.namespace,
           startKey: range.start_key.replace("\0", "/"),
           endKey: range.end_key.replace("\0", "/")
         }));
@@ -119,6 +125,7 @@ export function parseBlock(block: any): Block {
 
         const parsedWrites = writes.map((write) => {
           return {
+            namespace: set.namespace,
             isDelete: write.is_delete,
             key: write.key.replace("\0", "/"),
             value: parseOrString(write.value.toString()) // chain objects

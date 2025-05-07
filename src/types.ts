@@ -87,15 +87,18 @@ export interface Transaction<ChainObject = unknown, ChaincodeResponse = unknown>
 }
 
 export interface Read {
+  namespace: string;
   key: string;
 }
 
 export interface RangeRead {
+  namespace: string;
   startKey: string;
   endKey: string;
 }
 
 export interface Write<ChainObject = unknown> {
+  namespace: string;
   isDelete: boolean;
   key: string;
   value: ChainObject;
