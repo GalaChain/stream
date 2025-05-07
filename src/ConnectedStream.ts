@@ -26,6 +26,7 @@ export interface StreamConfig {
   batchSize: number;
   retryOnErrorDelayMs: number;
   maxRetryCount: number;
+  gracePeriodMs: number;
 }
 
 export class ConnectedStream {
@@ -47,7 +48,8 @@ export class ConnectedStream {
       intervalMs: this.streamConfig.intervalMs,
       batchSize: this.streamConfig.batchSize,
       retryOnErrorDelayMs: this.streamConfig.retryOnErrorDelayMs,
-      maxRetryCount: this.streamConfig.maxRetryCount
+      maxRetryCount: this.streamConfig.maxRetryCount,
+      gracePeriodMs: this.streamConfig.gracePeriodMs
     });
   }
 

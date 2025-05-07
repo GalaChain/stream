@@ -80,7 +80,8 @@ const config = {
     intervalMs: 1000,
     batchSize: 10,
     retryOnErrorDelayMs: 5000,
-    maxRetryCount: 5
+    maxRetryCount: 5,
+    gracePeriodMs: 1000
   }
 };
 ```

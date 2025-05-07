@@ -49,7 +49,8 @@ beforeAll(() => {
         intervalMs: 100,
         batchSize: 3,
         retryOnErrorDelayMs: 500,
-        maxRetryCount: 10
+        maxRetryCount: 10,
+        gracePeriodMs: 10
       },
       logger
     })

@@ -26,7 +26,7 @@ import {
   tap,
   timer
 } from "rxjs";
-import { bufferCount } from "rxjs/operators";
+import { bufferCount, delay } from "rxjs/operators";
 
 import { CAService, IIdentity } from "./CAService";
 import { ChainService, TransactionFilter } from "./ChainService";
@@ -102,7 +102,7 @@ export class ChainStream {
 
   public fromBlock(
     startBlock: number,
-    config: { batchSize: number; intervalMs: number; retryOnErrorDelayMs: number; maxRetryCount: number },
+    config: { batchSize: number; intervalMs: number; retryOnErrorDelayMs: number; maxRetryCount: number; gracePeriodMs: number },
     transactionFilter: TransactionFilter = () => true
   ) {
     let currentBlock = startBlock; // Keep track of the current block we're fetching
@@ -137,6 +137,8 @@ export class ChainStream {
             currentBlock = blockNums[blockNums.length - 1] + 1; // needs to be after getting blocks
             return blocks;
           }),
+
+          delay(config.gracePeriodMs),
 
           catchError((err) => {
             const channel = this.chainInfo.value.channelName;

@@ -41,7 +41,8 @@ const defaultStreamConfig = {
   intervalMs: 500,
   batchSize: 10,
   retryOnErrorDelayMs: 5000,
-  maxRetryCount: 5
+  maxRetryCount: 5,
+  gracePeriodMs: 1000
 };
 
 const defaultLogger: LoggerInterface = {
@@ -94,7 +95,8 @@ export class StreamBuilder {
       intervalMs: params.stream?.intervalMs ?? defaultStreamConfig.intervalMs,
       batchSize: params.stream?.batchSize ?? defaultStreamConfig.batchSize,
       retryOnErrorDelayMs: params.stream?.retryOnErrorDelayMs ?? defaultStreamConfig.retryOnErrorDelayMs,
-      maxRetryCount: params.stream?.maxRetryCount ?? defaultStreamConfig.maxRetryCount
+      maxRetryCount: params.stream?.maxRetryCount ?? defaultStreamConfig.maxRetryCount,
+      gracePeriodMs: params.stream?.gracePeriodMs ?? defaultStreamConfig.gracePeriodMs
     };
     this.logger = params.logger ?? defaultLogger;
   }
