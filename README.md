@@ -76,12 +76,10 @@ const config = {
     grpcHostnameOverride: "peer0.curator.local"
   },
   stream: {
-    chainInfoPollingIntervalMs: 2000,
-    intervalMs: 1000,
+    gracePeriodMs: 1000,
     batchSize: 10,
     retryOnErrorDelayMs: 5000,
-    maxRetryCount: 5,
-    gracePeriodMs: 1000
+    maxRetryCount: 5
   }
 };
 ```
