@@ -45,10 +45,9 @@ beforeAll(() => {
     .connect({
       // lower values for faster tests
       stream: {
-        chainInfoPollingIntervalMs: 100,
-        intervalMs: 100,
+        gracePeriodMs: 100,
         batchSize: 3,
-        retryOnErrorDelayMs: 500,
+        retryOnErrorDelayMs: 250,
         maxRetryCount: 10
       },
       logger

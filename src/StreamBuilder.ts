@@ -37,8 +37,7 @@ const defaultPeerConfig = {
 };
 
 const defaultStreamConfig = {
-  chainInfoPollingIntervalMs: 2000,
-  intervalMs: 500,
+  gracePeriodMs: 1000,
   batchSize: 10,
   retryOnErrorDelayMs: 5000,
   maxRetryCount: 5
@@ -89,9 +88,7 @@ export class StreamBuilder {
       grpcHostnameOverride: params.peer?.grpcHostnameOverride ?? defaultPeerConfig.grpcHostnameOverride
     };
     this.streamConfig = {
-      chainInfoPollingIntervalMs:
-        params.stream?.chainInfoPollingIntervalMs ?? defaultStreamConfig.chainInfoPollingIntervalMs,
-      intervalMs: params.stream?.intervalMs ?? defaultStreamConfig.intervalMs,
+      gracePeriodMs: params.stream?.gracePeriodMs ?? defaultStreamConfig.gracePeriodMs,
       batchSize: params.stream?.batchSize ?? defaultStreamConfig.batchSize,
       retryOnErrorDelayMs: params.stream?.retryOnErrorDelayMs ?? defaultStreamConfig.retryOnErrorDelayMs,
       maxRetryCount: params.stream?.maxRetryCount ?? defaultStreamConfig.maxRetryCount

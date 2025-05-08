@@ -26,7 +26,7 @@ import {
   tap,
   timer
 } from "rxjs";
-import { bufferCount } from "rxjs/operators";
+import { bufferCount, delay } from "rxjs/operators";
 
 import { CAService, IIdentity } from "./CAService";
 import { ChainService, TransactionFilter } from "./ChainService";
@@ -69,11 +69,11 @@ export class ChainStream {
   }
 
   public startPollingChainHeight(config: {
-    intervalMs: number;
+    gracePeriodMs: number;
     retryOnErrorDelayMs: number;
     maxRetryCount: number;
   }) {
-    return interval(config.intervalMs)
+    return interval(config.gracePeriodMs)
       .pipe(
         switchMap(async () => {
           const info = await this.queryChainInfo();
@@ -102,7 +102,7 @@ export class ChainStream {
 
   public fromBlock(
     startBlock: number,
-    config: { batchSize: number; intervalMs: number; retryOnErrorDelayMs: number; maxRetryCount: number },
+    config: { batchSize: number; retryOnErrorDelayMs: number; maxRetryCount: number; gracePeriodMs: number },
     transactionFilter: TransactionFilter = () => true
   ) {
     let currentBlock = startBlock; // Keep track of the current block we're fetching
@@ -114,8 +114,9 @@ export class ChainStream {
         }
 
         if (currentBlock >= this.chainInfo.value.height) {
-          return timer(config.intervalMs).pipe(
-            tap(() => this.logger.log(`No new blocks, retrying after ${config.intervalMs} ms...`)),
+          return of([]).pipe(
+            tap(() => this.logger.log(`No new blocks, retrying after ${config.gracePeriodMs} ms...`)),
+            delay(config.gracePeriodMs),
             switchMap(() => of([]))
           );
         }
@@ -137,6 +138,8 @@ export class ChainStream {
             currentBlock = blockNums[blockNums.length - 1] + 1; // needs to be after getting blocks
             return blocks;
           }),
+
+          delay(config.gracePeriodMs),
 
           catchError((err) => {
             const channel = this.chainInfo.value.channelName;
