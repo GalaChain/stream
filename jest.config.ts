@@ -14,11 +14,11 @@
  */
 
 export default {
-  displayName: "chaincode-template",
+  displayName: "stream",
   testEnvironment: "node",
   transform: {
     "^.+\\.[tj]s$": ["ts-jest", { tsconfig: "<rootDir>/tsconfig.spec.json" }]
   },
   moduleFileExtensions: ["ts", "js"],
-  modulePathIgnorePatterns: ["lib", "e2e"]
+  modulePathIgnorePatterns: ["lib", "e2e", "test-chaincode"]
 };

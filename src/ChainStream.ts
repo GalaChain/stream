@@ -41,7 +41,7 @@ export interface LoggerInterface {
 export class ChainStream {
   private readonly chainInfo: BehaviorSubject<ChainInfo>;
   private identityPromise: Promise<IIdentity> | undefined;
-
+  private isDisconnected = false;
   constructor(
     private readonly caService: CAService,
     private readonly chainService: ChainService,
@@ -109,6 +109,10 @@ export class ChainStream {
 
     return of([]).pipe(
       expand(() => {
+        if (this.isDisconnected) {
+          return of([]);
+        }
+
         if (currentBlock >= this.chainInfo.value.height) {
           return timer(config.intervalMs).pipe(
             tap(() => this.logger.log(`No new blocks, retrying after ${config.intervalMs} ms...`)),
@@ -154,6 +158,8 @@ export class ChainStream {
   }
 
   public disconnect() {
+    this.logger.log("Disconnected, closing the stream");
+    this.isDisconnected = true;
     this.chainService.disconnect();
   }
 }
