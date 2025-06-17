@@ -18,11 +18,13 @@ import {
   catchError,
   concatMap,
   expand,
+  filter,
   interval,
   of,
   range,
   retry,
   switchMap,
+  take,
   tap,
   timer
 } from "rxjs";
@@ -114,9 +116,9 @@ export class ChainStream {
         }
 
         if (currentBlock >= this.chainInfo.value.height) {
-          return of([]).pipe(
-            tap(() => this.logger.log(`No new blocks, retrying after ${config.gracePeriodMs} ms...`)),
-            delay(config.gracePeriodMs),
+          return this.chainInfo.pipe(
+            filter((newInfo) => newInfo.height > currentBlock),
+            take(1),
             switchMap(() => of([]))
           );
         }
