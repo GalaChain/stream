@@ -14,30 +14,8 @@
  */
 import stream, { Block, ChainCache, ChainInfo } from "./index";
 
-const config = {
-  ca: {
-    url: "https://localhost:7040",
-    name: "ca.curator.local",
-    orgMsp: "CuratorOrg"
-  },
-  user: {
-    userId: "admin",
-    userSecret: "adminpw"
-  },
-  peer: {
-    url: "grpcs://localhost:7041",
-    tlsCACertPath:
-      "./test-chaincode/test-network/fablo-target/fabric-config/crypto-config/peerOrganizations/curator.local/msp/tlscacerts/tlsca.curator.local-cert.pem",
-    grpcHostnameOverride: "peer0.curator.local"
-  },
-  stream: {
-    gracePeriodMs: 1000,
-    batchSize: 10,
-    retryOnErrorDelayMs: 5000,
-    maxRetryCount: 5
-  }
-};
 
+// Sample implementation of ChainCache that stores blocks in memory
 class InMemoryChainCache implements ChainCache {
   private blocks: Record<string, Block> = {};
 
@@ -64,6 +42,32 @@ class InMemoryChainCache implements ChainCache {
     this.blocks[`${channelName}-${blockNumber}`] = block;
   }
 }
+
+const config = {
+  ca: {
+    url: "https://localhost:7040",
+    name: "ca.curator.local",
+    orgMsp: "CuratorOrg"
+  },
+  user: {
+    userId: "admin",
+    userSecret: "adminpw"
+  },
+  peer: {
+    url: "grpcs://localhost:7041",
+    tlsCACertPath:
+      "./test-chaincode/test-network/fablo-target/fabric-config/crypto-config/peerOrganizations/curator.local/msp/tlscacerts/tlsca.curator.local-cert.pem",
+    grpcHostnameOverride: "peer0.curator.local"
+  },
+  stream: {
+    gracePeriodMs: 1000,
+    batchSize: 10,
+    retryOnErrorDelayMs: 5000,
+    maxRetryCount: 5
+  },
+  cache: new InMemoryChainCache()
+};
+
 
 stream
   .connect(config)

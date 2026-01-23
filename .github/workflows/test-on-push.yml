@@ -58,7 +58,7 @@ jobs:
       - name: Stream blocks from the network
         run:
           timeout 15s npx ts-node src/sample-blocks.ts || true
-      - name: Stream blocks from the network
+      - name: Stream transactions from the network
         run:
           timeout 15s npx ts-node src/sample-transactions.ts || true
       - name: Test
