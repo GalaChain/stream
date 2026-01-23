@@ -12,7 +12,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import stream from "./index";
+import stream, { Block, ChainCache, ChainInfo } from "./index";
+
+
+// Sample implementation of ChainCache that stores blocks in memory
+class InMemoryChainCache implements ChainCache {
+  private blocks: Record<string, Block> = {};
+
+  async getChainInfo(): Promise<ChainInfo | undefined> {
+    // no caching
+    return undefined;
+  }
+
+  async setChainInfo(): Promise<void> {
+    // no caching
+  }
+
+  async getBlock(channelName: string, blockNumber: number): Promise<Block | undefined> {
+    const block = this.blocks[`${channelName}-${blockNumber}`];
+    if (block) {
+      console.log("Block found in cache:", block.blockNumber);
+      return block;
+    }
+    return undefined;
+  }
+
+  async setBlock(channelName: string, blockNumber: number, block: Block): Promise<void> {
+    console.log("Saving block in cache:", block.blockNumber);
+    this.blocks[`${channelName}-${blockNumber}`] = block;
+  }
+}
 
 const config = {
   ca: {
@@ -35,8 +64,10 @@ const config = {
     batchSize: 10,
     retryOnErrorDelayMs: 5000,
     maxRetryCount: 5
-  }
+  },
+  cache: new InMemoryChainCache()
 };
+
 
 stream
   .connect(config)

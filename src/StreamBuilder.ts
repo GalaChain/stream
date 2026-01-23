@@ -17,6 +17,7 @@ import { CAConfig, CAService, UserConfig } from "./CAService";
 import { ChainService, PeerConfig } from "./ChainService";
 import { ChainStream, LoggerInterface } from "./ChainStream";
 import { ConnectedStream, StreamConfig } from "./ConnectedStream";
+import { ChainCache } from "./ChainCache";
 
 const defaultCaConfig = {
   orgMsp: "CuratorOrg",
@@ -61,6 +62,7 @@ export interface ConnectionParams {
   peer?: Partial<PeerConfig>;
   stream?: Partial<StreamConfig>;
   logger?: LoggerInterface;
+  cache?: ChainCache;
 }
 
 export class StreamBuilder {
@@ -69,6 +71,7 @@ export class StreamBuilder {
   private readonly peer: PeerConfig;
   private readonly streamConfig: StreamConfig;
   private readonly logger: LoggerInterface;
+  private readonly cache: ChainCache | undefined;
 
   constructor(params: ConnectionParams) {
     this.ca = {
@@ -94,11 +97,12 @@ export class StreamBuilder {
       maxRetryCount: params.stream?.maxRetryCount ?? defaultStreamConfig.maxRetryCount
     };
     this.logger = params.logger ?? defaultLogger;
+    this.cache = params.cache ?? undefined;
   }
 
   public build(channelName: string): ConnectedStream {
     const caService = new CAService(this.ca, this.user);
-    const chainService = new ChainService(this.peer, channelName, this.logger);
+    const chainService = new ChainService(this.peer, channelName, this.logger, this.cache);
     const chainStream = new ChainStream(caService, chainService, this.logger);
     return new ConnectedStream(chainStream, this.streamConfig);
   }

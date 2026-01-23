@@ -25,6 +25,7 @@ import { IIdentity } from "./CAService";
 import { LoggerInterface } from "./ChainStream";
 import { parseBlock } from "./parseBlock";
 import { Block, ChainInfo, Transaction, TransactionValidationCode } from "./types";
+import { ChainCache } from "./ChainCache";
 
 export interface PeerConfig {
   url: string;
@@ -44,8 +45,9 @@ export class ChainService {
   constructor(
     private readonly peer: PeerConfig,
     public readonly channelName: string,
-    private readonly logger: LoggerInterface
-  ) {}
+    private readonly logger: LoggerInterface,
+    private readonly cache: ChainCache | undefined
+  ) { }
 
   public connect(identity: IIdentity): void {
     this.logger.log(`Connecting to channel ${this.channelName}`);
@@ -147,15 +149,24 @@ export class ChainService {
       throw new Error(`Network ${this.channelName} not connected`);
     }
 
+    const cached = await this.cache?.getChainInfo(this.channelName);
+    if (cached) {
+      return cached;
+    }
+
     const querySystemCC = this.network.getContract("qscc");
     const blockBuffer = await querySystemCC.evaluateTransaction("GetChainInfo", this.channelName);
 
     const info = fabricProtos.BlockchainInfo.decode(blockBuffer);
 
-    return {
+    const chainInfo = {
       channelName: this.channelName,
       height: +info.height.toString()
     };
+
+    await this.cache?.setChainInfo(this.channelName, chainInfo);
+
+    return chainInfo;
   }
 
   public async queryBlocks(blockNumbers: number[], transactionFilter: TransactionFilter): Promise<Block[]> {
@@ -175,6 +186,13 @@ export class ChainService {
     network: Network,
     transactionFilter: TransactionFilter
   ): Promise<Block> {
+    const cached = await this.cache?.getBlock(this.channelName, blockNumber);
+    if (cached) {
+      // apply filter
+      cached.transactions = cached.transactions.filter(transactionFilter);
+      return cached;
+    }
+
     const querySystemCC = network.getContract("qscc");
     const blockBuffer = await querySystemCC.evaluateTransaction(
       "GetBlockByNumber",
@@ -185,18 +203,38 @@ export class ChainService {
     const convertedBlockBuffer = blockBuffer instanceof Uint8Array ? Buffer.from(blockBuffer) : blockBuffer;
     const block = parseBlock(BlockDecoder.decode(convertedBlockBuffer));
 
-    // apply filter
-    block.transactions = block.transactions.filter(transactionFilter);
+    // If we don't cache, then we can query only the transactions that match the filter
+    if (!this.cache) {
+      // apply filter
+      block.transactions = block.transactions.filter(transactionFilter);
 
-    // query transaction codes
-    const codes = await this.queryTransactionCodes(
-      network,
-      block.transactions.map((tx) => tx.id)
-    );
+      // query transaction codes
+      const codes = await this.queryTransactionCodes(
+        network,
+        block.transactions.map((tx) => tx.id)
+      );
 
-    block.transactions.forEach((t) => {
-      t.validationCode = codes[t.id] ?? TransactionValidationCode.UNKNOWN;
-    });
+      block.transactions.forEach((t) => {
+        t.validationCode = codes[t.id] ?? TransactionValidationCode.UNKNOWN;
+      });
+    }
+
+    // If we cache, then we need to query all transactions codes and filter them later
+    else {
+      // query transaction codes
+      const codes = await this.queryTransactionCodes(
+        network,
+        block.transactions.map((tx) => tx.id)
+      );
+
+      block.transactions.forEach((t) => {
+        t.validationCode = codes[t.id] ?? TransactionValidationCode.UNKNOWN;
+      });
+
+      await this.cache?.setBlock(this.channelName, blockNumber, block);
+
+      block.transactions = block.transactions.filter(transactionFilter);
+    }
 
     return block;
   }
