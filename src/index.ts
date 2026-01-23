@@ -24,3 +24,4 @@ export * from "./ConnectedStream";
 export * from "./StreamBuilder";
 export * from "./types";
 export * from "./ConnectedTransactionStream";
+export * from "./ChainCache";
