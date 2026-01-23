@@ -149,7 +149,7 @@ export class ChainService {
       throw new Error(`Network ${this.channelName} not connected`);
     }
 
-    const cached = this.cache?.getChainInfo(this.channelName);
+    const cached = await this.cache?.getChainInfo(this.channelName);
     if (cached) {
       return cached;
     }
@@ -159,10 +159,14 @@ export class ChainService {
 
     const info = fabricProtos.BlockchainInfo.decode(blockBuffer);
 
-    return {
+    const chainInfo = {
       channelName: this.channelName,
       height: +info.height.toString()
     };
+
+    await this.cache?.setChainInfo(this.channelName, chainInfo);
+
+    return chainInfo;
   }
 
   public async queryBlocks(blockNumbers: number[], transactionFilter: TransactionFilter): Promise<Block[]> {
@@ -182,7 +186,7 @@ export class ChainService {
     network: Network,
     transactionFilter: TransactionFilter
   ): Promise<Block> {
-    const cached = this.cache?.getBlock(this.channelName, blockNumber);
+    const cached = await this.cache?.getBlock(this.channelName, blockNumber);
     if (cached) {
       // apply filter
       cached.transactions = cached.transactions.filter(transactionFilter);
@@ -227,7 +231,7 @@ export class ChainService {
         t.validationCode = codes[t.id] ?? TransactionValidationCode.UNKNOWN;
       });
 
-      this.cache?.setBlock(this.channelName, blockNumber, block);
+      await this.cache?.setBlock(this.channelName, blockNumber, block);
 
       block.transactions = block.transactions.filter(transactionFilter);
     }
